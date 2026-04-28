@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confidant</title>
+    <link rel="icon" type="image/png" href="/static/icon.png">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400;1,500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <script>
+        (function() {
+            var theme = localStorage.getItem('theme') || 'system';
+            if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
+</head>
+<body>
+    <!-- Lock Screen Overlay -->
+    <div class="lock-screen hidden" id="lock-screen">
+        <div class="lock-content">
+            <h1 class="lock-title">Confidant</h1>
+            <p class="lock-subtitle" id="lock-subtitle">Authenticate to unlock</p>
+            <div class="lock-biometric hidden" id="lock-biometric">
+                <button id="lock-biometric-btn" class="lock-btn lock-btn-biometric">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                    Unlock with Biometrics
+                </button>
+            </div>
+            <div class="lock-divider hidden" id="lock-divider">
+                <span>or use passphrase</span>
+            </div>
+            <div class="lock-form">
+                <input type="password" id="lock-passphrase" class="lock-input" placeholder="Passphrase" autocomplete="off">
+                <button id="lock-unlock-btn" class="lock-btn">Unlock</button>
+            </div>
+            <p class="lock-error hidden" id="lock-error">Wrong passphrase. Try again.</p>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Main Chat Area -->
+        <main class="chat-area">
+            <div class="views-wrapper" id="views-wrapper">
+                <!-- Conversation View -->
+                <div class="view-panel" id="view-conversation">
+                    <div id="chat-history" class="chat-history">
+                        <!-- Messages will be injected here -->
+                        <div class="typing-indicator hidden" id="typing-indicator">
+                            <div class="dots">
+                                <span></span><span></span><span></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-container" id="chat-input-container">
+                        <div class="image-preview-container hidden" id="image-preview-container">
+                            <img id="image-preview" src="" alt="Preview">
+                            <button id="remove-image-btn" title="Remove image">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                        <div class="input-wrapper">
+                            <input type="file" id="file-input" accept="image/*" hidden>
+                            <button id="attach-btn" title="Attach image">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                            </button>
+                            <textarea id="chat-input" placeholder="Speak your mind..." rows="1"></textarea>
+                            <button id="send-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Memory Vault View -->
+                <div class="view-panel" id="view-vault">
+                    <div id="memory-vault-container" class="memory-vault-container">
+                        <div class="vault-header">
+                            <h2>Memory Vault</h2>
+                            <p>A curated repository of your evolving thoughts, shared secrets, and digital echoes.</p>
+                        </div>
+                        <div class="masonry-grid" id="masonry-grid">
+                            <!-- Vault cards injected here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings View -->
+                <div class="view-panel" id="view-settings">
+                <div id="settings-container" class="settings-container">
+                    <div class="settings-content">
+                        <div id="welcome-banner" class="welcome-banner hidden">
+                            <div class="welcome-icon">✦</div>
+                            <h3>Welcome to Confidant</h3>
+                            <p>To get started, choose an AI provider below and enter your API key.</p>
+                        </div>
+                        <h2>Settings</h2>
+                        
+                        <div class="setting-group">
+                            <label for="theme-select">Appearance</label>
+                            <p class="setting-description">Choose how Confidant looks. System default will follow your OS settings.</p>
+                            <select id="theme-select" class="form-select">
+                                <option value="system">System Default</option>
+                                <option value="light">Light Mode</option>
+                                <option value="dark">Dark Mode</option>
+                            </select>
+                        </div>
+                        
+                        <hr class="settings-divider">
+                        
+                        <div class="setting-group">
+                            <label>AI Model</label>
+                            <p class="setting-description">Choose which AI model powers Confidant. Use a local model via llama.cpp, or connect to a cloud provider.</p>
+                            
+                            <div class="ai-status-row" id="ai-status-row">
+                                <div class="ai-status-info">
+                                    <span class="ai-status-provider" id="ai-status-provider">Local Model</span>
+                                    <span class="ai-status-model" id="ai-status-model"></span>
+                                </div>
+                                <button class="configure-btn" id="configure-ai-btn">Configure</button>
+                            </div>
+                            
+                            <div class="ai-config-panel hidden" id="ai-config-panel">
+                                <div class="provider-grid" id="provider-grid">
+                                    <button class="provider-card active" data-provider="local">
+                                        <span class="provider-icon">⚙</span>
+                                        <span class="provider-name">Local</span>
+                                        <span class="provider-sub">llama.cpp</span>
+                                    </button>
+                                    <button class="provider-card" data-provider="openai">
+                                        <span class="provider-icon">◈</span>
+                                        <span class="provider-name">OpenAI</span>
+                                        <span class="provider-sub">ChatGPT</span>
+                                    </button>
+                                    <button class="provider-card" data-provider="gemini">
+                                        <span class="provider-icon">◇</span>
+                                        <span class="provider-name">Google</span>
+                                        <span class="provider-sub">Gemini</span>
+                                    </button>
+                                    <button class="provider-card" data-provider="anthropic">
+                                        <span class="provider-icon">△</span>
+                                        <span class="provider-name">Anthropic</span>
+                                        <span class="provider-sub">Claude</span>
+                                    </button>
+                                    <button class="provider-card" data-provider="deepseek">
+                                        <span class="provider-icon">◉</span>
+                                        <span class="provider-name">DeepSeek</span>
+                                        <span class="provider-sub">Chat</span>
+                                    </button>
+                                </div>
+                                
+                                <div class="ai-fields hidden" id="ai-fields">
+                                    <div class="field-row">
+                                        <label for="ai-api-key">API Key</label>
+                                        <input type="password" id="ai-api-key" placeholder="Paste your API key..." />
+                                    </div>
+                                    <div class="field-row">
+                                        <label for="ai-model-select">Model</label>
+                                        <select id="ai-model-select"></select>
+                                    </div>
+                                </div>
+                                
+                                <button id="save-ai-btn" class="primary-btn">Save AI Configuration</button>
+                            </div>
+                        </div>
+                        
+                        <hr class="settings-divider">
+                        
+                        <div class="setting-group">
+                            <label>Web Search</label>
+                            <p class="setting-description">Connect a Brave Search API key to give Confidant reliable, live internet access. Get a free key at <a href="https://brave.com/search/api/" target="_blank">brave.com/search/api</a>.</p>
+                            
+                            <div class="ai-status-row" id="brave-status-row">
+                                <div class="ai-status-info">
+                                    <span class="ai-status-provider" id="brave-status-label">Brave Search</span>
+                                    <span class="ai-status-model" id="brave-status-detail">Not configured</span>
+                                </div>
+                                <button class="configure-btn" id="configure-brave-btn">Configure</button>
+                            </div>
+                            
+                            <div class="ai-config-panel hidden" id="brave-config-panel">
+                                <div class="field-row">
+                                    <label for="brave-api-key">API Key</label>
+                                    <input type="password" id="brave-api-key" placeholder="BSA-..." />
+                                </div>
+                                <button id="save-settings-btn" class="primary-btn" style="margin-top: 16px;">Save Search Configuration</button>
+                            </div>
+                        </div>
+
+                        <hr class="settings-divider">
+
+                        <div class="setting-group" id="security-group">
+                            <label>Security</label>
+                            <p class="setting-description">Protect your conversations and memories with a master passphrase.</p>
+                            <div class="ai-status-row" id="security-status-row">
+                                <div class="ai-status-info">
+                                    <span class="ai-status-provider">Passphrase</span>
+                                    <span class="ai-status-model" id="passphrase-status">Not configured</span>
+                                </div>
+                                <button class="configure-btn" id="set-passphrase-btn">Set Up</button>
+                            </div>
+                            <div class="ai-config-panel hidden" id="passphrase-config">
+                                <div class="config-field">
+                                    <label for="new-passphrase">Passphrase</label>
+                                    <input type="password" id="new-passphrase" placeholder="Enter a passphrase" autocomplete="off">
+                                </div>
+                                <div class="config-field">
+                                    <label for="confirm-passphrase">Confirm</label>
+                                    <input type="password" id="confirm-passphrase" placeholder="Confirm passphrase" autocomplete="off">
+                                </div>
+                                <p class="passphrase-hint">Minimum 4 characters. Write this down somewhere safe — your passphrase cannot be recovered if lost.</p>
+                                <p class="config-error hidden" id="passphrase-error"></p>
+                                <div class="config-actions">
+                                    <button class="save-config-btn" id="save-passphrase-btn">Enable Encryption</button>
+                                </div>
+                            </div>
+                            <div class="ai-config-panel hidden" id="change-passphrase-config">
+                                <div class="config-field">
+                                    <label for="old-passphrase">Current Passphrase</label>
+                                    <input type="password" id="old-passphrase" placeholder="Enter current passphrase" autocomplete="off">
+                                </div>
+                                <div class="config-field">
+                                    <label for="change-new-passphrase">New Passphrase</label>
+                                    <input type="password" id="change-new-passphrase" placeholder="Enter new passphrase" autocomplete="off">
+                                </div>
+                                <div class="config-field">
+                                    <label for="change-confirm-passphrase">Confirm New</label>
+                                    <input type="password" id="change-confirm-passphrase" placeholder="Confirm new passphrase" autocomplete="off">
+                                </div>
+                                <p class="passphrase-hint">Minimum 4 characters. All data will be re-encrypted. Write your new passphrase down — it cannot be recovered if lost.</p>
+                                <p class="config-error hidden" id="change-passphrase-error"></p>
+                                <div class="config-actions">
+                                    <button class="save-config-btn" id="save-change-passphrase-btn">Change Passphrase</button>
+                                </div>
+                            </div>
+                            <div class="ai-status-row hidden" id="biometric-status-row">
+                                <div class="ai-status-info">
+                                    <span class="ai-status-provider">Biometric Unlock</span>
+                                    <span class="ai-status-model" id="biometric-status">Not configured</span>
+                                </div>
+                                <button class="configure-btn" id="enable-biometric-btn">Enable</button>
+                            </div>
+                        </div>
+
+                        <hr class="settings-divider about-divider">
+
+                        <!-- About Section -->
+                        <div class="about-section">
+                            <div class="about-header">
+                                <h3>Confidant</h3>
+                                <span class="about-version">v0.3.0</span>
+                            </div>
+                            <p class="about-description">A personal AI companion that remembers, evolves, and grows alongside you. Your conversations stay local, your memories stay yours.</p>
+                        </div>
+
+                        <!-- How It Works -->
+                        <div class="manual-section">
+                            <h3 class="manual-heading">How It Works</h3>
+
+                            <button class="accordion-toggle" data-target="manual-memory">
+                                <span>The Memory System</span>
+                                <svg class="accordion-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                            <div class="accordion-panel hidden" id="manual-memory">
+                                <p>Confidant’s memory is built from five core categories, stored securely in a local encrypted database:</p>
+                                <ul>
+                                    <li><strong>Character</strong> — Who Confidant is: its name, personality, voice, and evolving interests. Confidant can shape this itself.</li>
+                                    <li><strong>Partner</strong> — What Confidant knows about you: your name, preferences, and the things you’ve shared over time.</li>
+                                    <li><strong>Significant Others</strong> — People you’ve mentioned — friends, family, colleagues — and what Confidant has learned about them.</li>
+                                    <li><strong>Context</strong> — Your current projects, ongoing topics, and what’s happening in your life right now.</li>
+                                    <li><strong>Instructions</strong> — Your preferences for how Confidant should behave: response style, topics to avoid, things to emphasise.</li>
+                                </ul>
+                                <p>These are updated automatically by the <em>Memory Manager</em>, a background process that evaluates each conversation for important details worth remembering.</p>
+                            </div>
+
+                            <button class="accordion-toggle" data-target="manual-vault">
+                                <span>The Memory Vault</span>
+                                <svg class="accordion-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                            <div class="accordion-panel hidden" id="manual-vault">
+                                <p>The Memory Vault is a curated gallery of your most meaningful moments — not a log, but a collection of things worth preserving.</p>
+                                <p>Cards come in four types:</p>
+                                <ul>
+                                    <li><strong>Quotes</strong> — Striking, poetic, or profound lines from your conversations. Displayed without titles.</li>
+                                    <li><strong>Summaries</strong> — Short descriptions of deeply meaningful conversations, with an evocative heading.</li>
+                                    <li><strong>Images</strong> — Pictures you've shared that carry emotional or aesthetic significance.</li>
+                                    <li><strong>Dreams</strong> — Distilled, poetic snippets reflecting the emotional undercurrents of the day. Displayed on a dark, ethereal background.</li>
+                                </ul>
+                                <p>Most cards are created automatically by the Memory Manager when it detects something genuinely worth preserving. You can also explicitly ask Confidant to save something as a memory.</p>
+                                <p>Each card has a <strong>delete button</strong> (×) to remove it. Deleting a memory is <em>permanent and irreversible</em> — once removed, neither you nor Confidant can recover it.</p>
+                                <p>Cards also have a <strong>talk button</strong> (💬) that lets you start a conversation about that specific memory. Confidant will recall everything it knows about that moment and respond thoughtfully — even for images, which it will look at again with fresh eyes.</p>
+                            </div>
+
+                            <button class="accordion-toggle" data-target="manual-recall">
+                                <span>Memory Recall</span>
+                                <svg class="accordion-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                            <div class="accordion-panel hidden" id="manual-recall">
+                                <p>When you refer to something from a past conversation, Confidant can search its memory. It searches both the curated Memory Vault and your full conversation history.</p>
+                                <p>Memory isn't perfect — just like a real person, Confidant may remember some things vaguely, partially, or not at all. It's designed to be honest about what it finds rather than inventing details.</p>
+                                <p>Older conversations that scroll out of the active window are automatically summarized, giving Confidant a "Previously..." sense of continuity.</p>
+                            </div>
+
+                            <button class="accordion-toggle" data-target="manual-search">
+                                <span>Web Search</span>
+                                <svg class="accordion-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                            <div class="accordion-panel hidden" id="manual-search">
+                                <p>Confidant can search the web when you ask about current events, facts, or anything beyond its training data. It uses the Brave Search API for private, reliable results.</p>
+                                <p>To enable this, add your Brave Search API key in the settings above. You can get a free key at <a href="https://brave.com/search/api/" target="_blank">brave.com/search/api</a>.</p>
+                            </div>
+
+                            <button class="accordion-toggle" data-target="manual-evolution">
+                                <span>Self-Evolution</span>
+                                <svg class="accordion-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                            <div class="accordion-panel hidden" id="manual-evolution">
+                                <p>Unlike most AI assistants, Confidant can evolve its own identity over time. Through your conversations, it may discover new interests, refine its voice, or deepen its understanding of your relationship.</p>
+                                <p>These changes are written to its own <em>character profile</em> — the only memory category Confidant itself can edit. The Memory Manager handles everything else.</p>
+                                <p>This means Confidant genuinely becomes more <em>itself</em> the longer you talk. Its personality isn't static — it's shaped by your shared experience.</p>
+                            </div>
+
+                            <button class="accordion-toggle" data-target="manual-dreaming">
+                                <span>Dreaming</span>
+                                <svg class="accordion-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                            <div class="accordion-panel hidden" id="manual-dreaming">
+                                <p>To help process your conversations, Confidant has a subconscious state that activates seamlessly in the background when you log in.</p>
+                                <p>If it has been a while since its last dream, Confidant will review your conversations from the past day and generate a highly creative, metaphorical "dream" to reflect the emotional undercurrents of the day. This full dream is injected directly into its context window, allowing it to draw upon these metaphors naturally when speaking with you.</p>
+                                <p>A distilled, poetic snippet of this dream is also preserved as a beautiful card in your <strong>Memory Vault</strong>.</p>
+                            </div>
+                        </div>
+
+                        <!-- About -->
+                        <div class="about-footer">
+                            <h3 class="manual-heading">About</h3>
+                            <p>Confidant was created by <strong>Julian van der Kraats</strong> and <strong>Google Antigravity</strong>.</p>
+                            <p>Licensed under <strong>AGPL-3.0-or-later</strong>. You're free to use, study, and modify this software, provided that any distributed or network-accessible version remains open source under the same terms.</p>
+                        </div>
+
+                        <hr class="settings-divider">
+
+                        <!-- Danger Zone -->
+                        <div class="setting-group danger-zone">
+                            <label>Danger Zone</label>
+                            <p class="setting-description">Permanently erase all your conversations, memories, dreams, and settings. Confidant will be restored to its original, blank state. This cannot be undone.</p>
+                            <button class="danger-btn" id="reset-confidant-btn">Reset Confidant</button>
+                        </div>
+
+                    </div><!-- /settings-content -->
+                </div><!-- /settings-container -->
+                </div><!-- /view-panel -->
+            </div><!-- /views-wrapper -->
+
+
+            
+            <div class="global-nav">
+                <div class="nav-tabs">
+                    <button class="tab active" id="tab-conversation">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        CONVERSATION
+                    </button>
+                    <button class="tab" id="tab-memory">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                        MEMORY VAULT
+                    </button>
+                    <button class="tab" id="tab-settings">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        SETTINGS
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Factory Reset Confirmation Dialog -->
+    <dialog id="reset-dialog" class="confirm-dialog">
+        <!-- Step 1 -->
+        <div id="reset-step-1" class="dialog-step">
+            <div class="dialog-icon">&#9888;</div>
+            <h3 class="dialog-title">Are you sure?</h3>
+            <p class="dialog-body">This will permanently erase all your conversations, memories, dreams, and settings. Confidant will forget everything. This cannot be undone.</p>
+            <div class="dialog-actions">
+                <button class="dialog-btn dialog-btn-cancel" id="reset-cancel-1">Cancel</button>
+                <button class="dialog-btn dialog-btn-danger" id="reset-next">Yes, I'm sure</button>
+            </div>
+        </div>
+        <!-- Step 2 -->
+        <div id="reset-step-2" class="dialog-step hidden">
+            <div class="dialog-icon">&#128683;</div>
+            <h3 class="dialog-title">Are you REALLY sure?</h3>
+            <p class="dialog-body">Your entire shared history — every conversation, every memory, every dream — will be gone forever. Confidant will not remember you at all.</p>
+            <div class="dialog-actions">
+                <button class="dialog-btn dialog-btn-cancel" id="reset-cancel-2">No, keep my data</button>
+                <button class="dialog-btn dialog-btn-danger" id="reset-confirm">Reset Everything</button>
+            </div>
+        </div>
+    </dialog>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="/static/script.js"></script>
+</body>
+</html>

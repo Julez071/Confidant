@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+confidant.db
+*.db
+*.sqlite
+*.sqlite3
+window_state.json
+settings.json
+.env
+.webview_storage/
+static/icon.ico
+build/
+dist/
+*.spec
